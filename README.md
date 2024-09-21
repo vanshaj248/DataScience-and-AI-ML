@@ -36,15 +36,11 @@ This repository contains a comprehensive collection of all the certifications Iâ
 
 - **Deep Learning**:
   - Frameworks: `TensorFlow`, `PyTorch`, `Keras`
-
 - **Big Data**:
   - Processing large datasets: `Apache Spark (PySpark, Spark MLlib)`
-
 - **Visualization**:
-  - Libraries for creating interactive visualizations: 
-    - `Plotly`
-    - `Bokeh`
-    - `D3.js`
+  - Libraries for creating interactive visualizations: `Plotly`,`Bokeh`,`D3.js`
+
 - **Data Structures and Algorithms:
 - Studied and applied various data structures and algorithms relevant to data science tasks.
 
