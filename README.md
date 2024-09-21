@@ -18,10 +18,8 @@ This repository contains a comprehensive collection of all the certifications Iâ
 ### Programming for Data Science and AI/ML:
 
 #### Languages:
-- **Python**: 
-  - Libraries: Pandas, NumPy, Matplotlib
-- **R**: 
-  - Libraries: dplyr, ggplot2
+- **Python**: Libraries: Pandas, NumPy, Matplotlib
+- **R**: Libraries: dplyr, ggplot2
 - **Julia**: For performance-optimized data science tasks.
 - **Scala**: For working with Apache Spark.
 - **SQL**: For querying databases.
@@ -31,7 +29,6 @@ This repository contains a comprehensive collection of all the certifications Iâ
   - Data manipulation and analysis: `NumPy`, `Pandas`
   - Visualization: `Matplotlib`, `Seaborn`
   - Machine learning: `Scikit-learn`
-  
 - **R**:
   - Visualization: `ggplot2`
   - Data manipulation: `dplyr`
