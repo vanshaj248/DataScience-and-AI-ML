@@ -1,19 +1,14 @@
 import openmeteo_requests
-import mysql.connector
 import requests_cache
 from retry_requests import retry
-from datetime import *
-mydb = mysql.connector.connect(
-  host="localhost",
-  user="root",
-  password="password",
-  database="API_Learn",
-)
+from datetime import datetime
+import csv
+import os
 
 # Setup the Open-Meteo API client with cache and retry on error
-cache_session = requests_cache.CachedSession('.cache', expire_after = 3600)
-retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
-openmeteo = openmeteo_requests.Client(session = retry_session)
+cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
+retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
+openmeteo = openmeteo_requests.Client(session=retry_session)
 
 # The order of variables in hourly or daily is important to assign them correctly below
 url = "https://api.open-meteo.com/v1/forecast"
@@ -41,10 +36,21 @@ date = datetime.now().date()
 time = datetime.now().time()
 print(date, time)
 
-mycursor = mydb.cursor()
-sql = ("INSERT INTO Weather (date, time, current_temperature, apparent_temperature) VALUES (%s, %s, %s, %s)")
-val = (date, time, current_temperature_2m, current_apparent_temperature)
+# Define the CSV file path
+csv_file_path = '/Users/vanshajshah/Documents/Programming/code/DataScience-and-AI-ML/DataScience and AI ML/Data Collection and Storage/Api_Learn/API Data Collection and Analysis/weatherdata.csv'
 
-mycursor.execute(sql, val)
-mydb.commit() 
-print(mycursor.rowcount, "record inserted.")
+# Check if the CSV file exists
+file_exists = os.path.isfile(csv_file_path)
+
+# Open the CSV file in append mode
+with open(csv_file_path, mode='a', newline='') as file:
+	writer = csv.writer(file)
+	
+	# Write the header if the file does not exist
+	if not file_exists:
+		writer.writerow(["date", "time", "current_temperature", "apparent_temperature"])
+	
+	# Write the data
+	writer.writerow([date, time, current_temperature_2m, current_apparent_temperature])
+
+print("Data written to CSV file.")
