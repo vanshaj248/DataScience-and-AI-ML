@@ -55,7 +55,6 @@ def update_csv():
 		# Write the data
 		writer.writerow([date, time, current_temperature_2m, current_apparent_temperature])
 
-	print("Data written to CSV file.")
 
 def commit_and_push_changes():
 	# Git commands to commit and push
