@@ -4,6 +4,7 @@ from retry_requests import retry
 from datetime import datetime
 import csv
 import os
+import subprocess
 
 # Setup the Open-Meteo API client with cache and retry on error
 cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
@@ -39,18 +40,31 @@ print(date, time)
 # Define the CSV file path
 csv_file_path = '/Users/vanshajshah/Documents/Programming/code/DataScience-and-AI-ML/DataScience and AI ML/Data Collection and Storage/Api_Learn/API Data Collection and Analysis/weatherdata.csv'
 
-# Check if the CSV file exists
-file_exists = os.path.isfile(csv_file_path)
+def update_csv():
+	# Check if the CSV file exists
+	file_exists = os.path.isfile(csv_file_path)
 
-# Open the CSV file in append mode
-with open(csv_file_path, mode='a', newline='') as file:
-	writer = csv.writer(file)
-	
-	# Write the header if the file does not exist
-	if not file_exists:
-		writer.writerow(["date", "time", "current_temperature", "apparent_temperature"])
-	
-	# Write the data
-	writer.writerow([date, time, current_temperature_2m, current_apparent_temperature])
+	# Open the CSV file in append mode
+	with open(csv_file_path, mode='a', newline='') as file:
+		writer = csv.writer(file)
+		
+		# Write the header if the file does not exist
+		if not file_exists:
+			writer.writerow(["date", "time", "current_temperature", "apparent_temperature"])
+		
+		# Write the data
+		writer.writerow([date, time, current_temperature_2m, current_apparent_temperature])
 
-print("Data written to CSV file.")
+	print("Data written to CSV file.")
+
+def commit_and_push_changes():
+	# Git commands to commit and push
+	subprocess.run(['git', 'config', 'user.name', 'github-actions[bot]'])
+	subprocess.run(['git', 'config', 'user.email', 'github-actions[bot]@users.noreply.github.com'])
+	subprocess.run(['git', 'add', csv_file_path])
+	subprocess.run(['git', 'commit', '-m', 'Update weather data'])
+	subprocess.run(['git', 'push'])
+
+if __name__ == "__main__":
+	update_csv()
+	commit_and_push_changes()
