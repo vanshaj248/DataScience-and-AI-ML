@@ -20,15 +20,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas requests
+          pip install pandas requests openmeteo_requests requests_cache retry_requests
 
       - name: Run the Python script
-        run: python Weather.py
+        run: python DataScience and AI ML/Data Collection and Storage/Api_Learn/API Data Collection and Analysis/Weather.py
 
-      - name: Commit and push changes
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com" # spell-checker: disable-line
-          git add weather_data.csv
-          git commit -m "Update weather data"
-          git push

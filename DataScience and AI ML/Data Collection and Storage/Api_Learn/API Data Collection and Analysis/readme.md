@@ -12,7 +12,7 @@ This project collects data from an online weather API and updates it to a CSV fi
 
 1. **Install Dependencies**: Ensure you have the necessary libraries installed.
 2. **Configure API Access**: Set up your API key and endpoint.
-3. **Run the Script**: Execute the script to collect and store the data.
+3. **Run the Script**: The script is automatically executed every 2 hours using GitHub Actions to collect and store the data.
 
 ### Requirements
 
@@ -35,8 +35,42 @@ df = pd.DataFrame(data)
 df.to_csv('weather_data.csv', index=False)
 ```
 
+### GitHub Actions Workflow
+
+Create a `.github/workflows/data_collection.yml` file with the following content to automate the script execution:
+
+```yaml
+name: Collect Weather Data
+
+on:
+     schedule:
+          - cron: '0 */2 * * *' # Runs every 2 hours
+
+jobs:
+     collect-data:
+          runs-on: ubuntu-latest
+
+          steps:
+          - name: Checkout repository
+               uses: actions/checkout@v2
+
+          - name: Set up Python
+               uses: actions/setup-python@v2
+               with:
+                    python-version: '3.x'
+
+          - name: Install dependencies
+               run: |
+                    python -m pip install --upgrade pip
+                    pip install requests pandas
+
+          - name: Run script
+               run: |
+                    python /path/to/your/script.py
+```
+
 ### Notes
 
-- A public api is used.
+- A public API is used.
 - Handle exceptions and errors for robust data collection.
-- Schedule the script to run at regular intervals for continuous data collection.
+- The script is scheduled to run every 2 hours using GitHub Actions for continuous data collection.
