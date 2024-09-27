@@ -23,5 +23,5 @@ jobs:
           pip install pandas requests openmeteo_requests requests_cache retry_requests
 
       - name: Run the Python script
-        run: python DataScience and AI ML/Data Collection and Storage/Api_Learn/API Data Collection and Analysis/Weather.py
+        run: python "DataScience and AI ML/Data Collection and Storage/Api_Learn/API Data Collection and Analysis/Weather.py"
 

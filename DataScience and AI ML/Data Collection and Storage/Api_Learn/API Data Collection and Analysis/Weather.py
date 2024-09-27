@@ -37,8 +37,8 @@ date = datetime.now().date()
 time = datetime.now().time()
 print(date, time)
 
-# Define the CSV file path
-csv_file_path = 'DataScience-and-AI-ML/DataScience and AI ML/Data Collection and Storage/Api_Learn/API Data Collection and Analysis/weatherdata.csv'
+# Updated CSV file path to be relative to the repository root
+csv_file_path = 'DataScience and AI ML/Data Collection and Storage/Api_Learn/API Data Collection and Analysis/weatherdata.csv'
 
 def update_csv():
 	# Check if the CSV file exists
