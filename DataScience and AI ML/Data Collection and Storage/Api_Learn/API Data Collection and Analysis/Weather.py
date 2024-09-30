@@ -4,7 +4,6 @@ from retry_requests import retry
 from datetime import datetime
 import csv
 import os
-import subprocess
 
 # Setup the Open-Meteo API client with cache and retry on error
 cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
@@ -58,14 +57,5 @@ def update_csv():
         # Write the data
         writer.writerow([date, time, current_temperature_2m, current_apparent_temperature])
 
-def commit_and_push_changes():
-    # Git commands to commit and push
-    subprocess.run(['git', 'config', 'user.name', 'github-actions[bot]'])
-    subprocess.run(['git', 'config', 'user.email', 'github-actions[bot]@users.noreply.github.com'])
-    subprocess.run(['git', 'add', csv_file_path])
-    subprocess.run(['git', 'commit', '-m', 'Update weather data'])
-    subprocess.run(['git', 'push'])
-
 if __name__ == "__main__":
     update_csv()
-    commit_and_push_changes()
