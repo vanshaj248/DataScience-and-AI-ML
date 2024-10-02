@@ -1,4 +1,5 @@
 name: Update Weather Data
+
 on:
   schedule:
     # Runs every 30 minutes
@@ -24,13 +25,13 @@ jobs:
 
       - name: Run the Python script
         run: python "DataScience and AI ML/Data Collection and Storage/Api_Learn/API Data Collection and Analysis/Weather.py"
-        working-directory: ${{ github.workspace }}
 
-      - name: Force Push CSV Changes (overwrite remote)
+      # Step to commit and force push changes
+      - name: Commit and force push changes
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add 'DataScience and AI ML/Data Collection and Storage/Api_Learn/API Data Collection and Analysis/weatherdata.csv'
-          git commit -m 'Update weather data'
-          git push origin main --force
-        working-directory: ${{ github.workspace }}
+          git commit -m "Update weather data"
+          # Force push to overwrite the remote repository with local changes
+          git push --force origin main
