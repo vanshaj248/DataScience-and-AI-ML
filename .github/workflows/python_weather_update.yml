@@ -26,16 +26,11 @@ jobs:
         run: python "DataScience and AI ML/Data Collection and Storage/Api_Learn/API Data Collection and Analysis/Weather.py"
         working-directory: ${{ github.workspace }}
 
-      - name: Pull latest changes from remote
+      - name: Force Push CSV Changes (overwrite remote)
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git pull origin main
-        working-directory: ${{ github.workspace }}
-
-      - name: Commit and Push CSV Changes
-        run: |
           git add 'DataScience and AI ML/Data Collection and Storage/Api_Learn/API Data Collection and Analysis/weatherdata.csv'
           git commit -m 'Update weather data'
-          git push origin main
+          git push origin main --force
         working-directory: ${{ github.workspace }}
