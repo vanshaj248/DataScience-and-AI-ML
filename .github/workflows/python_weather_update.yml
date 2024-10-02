@@ -22,9 +22,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install pandas requests openmeteo_requests requests_cache retry_requests
 
+      - name: List files in the repository  # Debugging step
+        run: ls -R
+
       - name: Run the Python script
         run: python "DataScience and AI ML/Data Collection and Storage/Api_Learn/API Data Collection and Analysis/Weather.py"
-        # Set working directory to the repository root
         working-directory: ${{ github.workspace }}
 
       - name: Commit and Push CSV Changes
