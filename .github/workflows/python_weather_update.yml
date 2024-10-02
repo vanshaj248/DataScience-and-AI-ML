@@ -27,13 +27,14 @@ jobs:
         working-directory: ${{ github.workspace }}
 
       - name: Pull latest changes from remote
-        run: git pull origin main
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git pull origin main
         working-directory: ${{ github.workspace }}
 
       - name: Commit and Push CSV Changes
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add 'DataScience and AI ML/Data Collection and Storage/Api_Learn/API Data Collection and Analysis/weatherdata.csv'
           git commit -m 'Update weather data'
           git push origin main
