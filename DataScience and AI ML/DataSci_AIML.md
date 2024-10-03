@@ -51,6 +51,7 @@
 - **Reinforcement Learning**: Q-learning, deep Q-networks (DQN), policy gradients.
 
 ## 7. Deep Learning
+
 - **Neural Networks**:
   - **Artificial Neural Networks (ANN)**: Perceptron, multilayer perceptron, backpropagation.
   - **Convolutional Neural Networks (CNN)**: For image classification, object detection.
