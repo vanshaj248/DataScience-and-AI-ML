@@ -12,9 +12,7 @@ This repository contains a comprehensive collection of all the certifications Iâ
 - **Calculus**
 - **Optimization**
 - **Discrete Mathematics**
-
 ---
-
 ### Programming for Data Science and AI/ML:
 
 #### Languages:
