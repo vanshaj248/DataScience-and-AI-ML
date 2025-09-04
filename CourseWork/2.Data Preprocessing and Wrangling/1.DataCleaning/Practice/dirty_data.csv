@@ -1,0 +1,11 @@
+id,name,age,salary,joining_date,gender,city
+1,Alice,25.0,50000.0,2020-01-10,Male,New York
+2,Bob,,60000.0,01/15/2021,M,new york
+3,Charlie,35.0,,"March 5, 2021",male,NEW YORK
+4,alice,45.0,80000.0,2021-04-12,Female,Los Angeles
+5,BOB,200.0,1200000.0,12-05-2021,F,los angeles
+5,Eve,29.0,55000.0,,female,Chicago
+6,Frank,33.0,,2021/07/20,,chicago
+7,George,120.0,65000.0,20210815,Other,Miami
+8,Henry,27.0,70000.0,2021.09.01,O,
+9,Ivy,,72000.0,10th Oct 2021,FEMALE,miami
