@@ -2,19 +2,10 @@
 
 Below are detailed project specifications. Each project must be implemented from scratch, without using high-level ML libraries (e.g., scikit-learn, TensorFlow, PyTorch). Only basic utilities (e.g., NumPy for array operations, matplotlib for plotting) are allowed where necessary.
 
----
-
-## 1. Exploratory Data Analysis Portfolio
-**Goal:** Analyze multiple datasets, uncover patterns, and visualize insights.  
-**Requirements:**  
-- Collect at least 3 diverse datasets (CSV, JSON, etc.).
-- Implement data loading, cleaning, and transformation routines.
-- Create summary statistics, correlation matrices, and custom visualizations (histograms, scatter plots, etc.) using basic plotting tools.
-- Document findings in markdown reports.
 
 ---
 
-## 2. Iris Flower Classification (with Visualization)
+## 1. Iris Flower Classification (with Visualization)
 **Goal:** Classify iris species using a custom-built classifier.  
 **Requirements:**  
 - Implement data parsing and normalization.
@@ -24,7 +15,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 3. Build Your Own Linear Regression (From Scratch)
+## 2. Build Your Own Linear Regression (From Scratch)
 **Goal:** Predict continuous values using linear regression.  
 **Requirements:**  
 - Implement linear regression using gradient descent.
@@ -34,17 +25,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 4. Titanic Survival Prediction
-**Goal:** Predict passenger survival on the Titanic.  
-**Requirements:**  
-- Implement data preprocessing (handle missing values, encode categories).
-- Build a logistic regression classifier from scratch.
-- Evaluate with accuracy, precision, recall.
-- Visualize feature importance.
-
----
-
-## 5. Housing Price Prediction
+## 3. Housing Price Prediction
 **Goal:** Predict house prices using regression.  
 **Requirements:**  
 - Implement data normalization and feature engineering.
@@ -54,7 +35,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 6. Image Classification System
+## 4. Image Classification System
 **Goal:** Classify images into categories.  
 **Requirements:**  
 - Implement image loading and preprocessing (grayscale, resize).
@@ -64,7 +45,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 7. Sentiment Analysis
+## 5. Sentiment Analysis
 **Goal:** Classify text as positive or negative sentiment.  
 **Requirements:**  
 - Implement text preprocessing (tokenization, stopword removal).
@@ -73,7 +54,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 8. Customer Churn Predictor
+## 6. Customer Churn Predictor
 **Goal:** Predict if a customer will churn.  
 **Requirements:**  
 - Implement data preprocessing and feature selection.
@@ -82,7 +63,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 9. Build Your Own Neural Network
+## 7. Build Your Own Neural Network
 **Goal:** Implement a feedforward neural network.  
 **Requirements:**  
 - Build layers, activation functions, and backpropagation from scratch.
@@ -92,7 +73,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 10. Real-Time Face Recognition
+## 8. Real-Time Face Recognition
 **Goal:** Recognize faces in real-time from webcam.  
 **Requirements:**  
 - Implement basic image processing (grayscale, edge detection).
@@ -102,7 +83,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 11. Recommendation System
+## 9. Recommendation System
 **Goal:** Recommend items to users.  
 **Requirements:**  
 - Implement collaborative filtering (user-based or item-based) from scratch.
@@ -111,7 +92,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 12. Automated ML Pipeline
+## 10. Automated ML Pipeline
 **Goal:** Automate data preprocessing, model training, and evaluation.  
 **Requirements:**  
 - Build modular pipeline components (data cleaning, feature engineering, model training).
@@ -120,7 +101,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 13. Language Model From Scratch
+## 11. Language Model From Scratch
 **Goal:** Predict next word in a sequence.  
 **Requirements:**  
 - Implement n-gram language model.
@@ -129,7 +110,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 14. A/B Testing Framework
+## 12. A/B Testing Framework
 **Goal:** Compare two variants statistically.  
 **Requirements:**  
 - Implement random assignment and data collection.
@@ -138,7 +119,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 15. Image Generating System
+## 13. Image Generating System
 **Goal:** Generate images from noise.  
 **Requirements:**  
 - Implement a simple generative model (e.g., basic GAN or autoencoder) from scratch.
@@ -147,7 +128,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 16. Multi-Language NLP Pipeline
+## 14. Multi-Language NLP Pipeline
 **Goal:** Process and analyze text in multiple languages.  
 **Requirements:**  
 - Implement language detection, tokenization, and basic text analysis.
@@ -156,7 +137,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 17. Reinforcement Learning AI Game
+## 15. Reinforcement Learning AI Game
 **Goal:** Train an agent to play a simple game.  
 **Requirements:**  
 - Implement environment and agent logic.
@@ -165,7 +146,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 18. Real-Time Fault Detection
+## 16. Real-Time Fault Detection
 **Goal:** Detect anomalies in streaming data.  
 **Requirements:**  
 - Implement real-time data ingestion.
@@ -174,7 +155,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 19. Build Your Own AutoML
+## 17. Build Your Own AutoML
 **Goal:** Automate model selection and hyperparameter tuning.  
 **Requirements:**  
 - Implement search over model types and parameters.
@@ -183,7 +164,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 20. MLOps Pipeline
+## 18. MLOps Pipeline
 **Goal:** Automate ML workflow from training to deployment.  
 **Requirements:**  
 - Implement version control for data and models.
@@ -192,7 +173,7 @@ Below are detailed project specifications. Each project must be implemented from
 
 ---
 
-## 21. Distributed ML Systems
+## 19. Distributed ML Systems
 **Goal:** Train models across multiple machines.  
 **Requirements:**  
 - Implement data partitioning and aggregation logic.
