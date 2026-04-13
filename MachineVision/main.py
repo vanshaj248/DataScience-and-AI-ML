@@ -249,29 +249,35 @@ def run(args: argparse.Namespace) -> None:
     WARMUP_FRAMES = 30
     warmup_count  = 0
 
+    # ── Create the display window BEFORE the loop ─────────────────────────
+    # On macOS, cv2.waitKey only works reliably once a named window exists.
+    # Creating it here ensures key input works from the very first frame.
+    cv2.namedWindow("Motion Tracker", cv2.WINDOW_NORMAL)
+
+    # macOS camera warm-up: read and discard a few frames so the camera
+    # sensor has time to initialise exposure/white-balance before MOG2 learns.
+    print("[INFO] Warming up camera...")
+    for _ in range(5):
+        cap.read()
+
     while True:
-        # ── Keyboard input ────────────────────────────────────────────────
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord('q'):
-            break
-        elif key == ord('p'):
-            paused = not paused
-            print("[INFO] Paused" if paused else "[INFO] Resumed")
-        elif key == ord('m'):
-            show_mask = not show_mask
-            if not show_mask:
-                cv2.destroyWindow("Motion Mask")
-        elif key == ord('t'):
-            show_trail = not show_trail
-
-        if paused:
-            continue
-
         # ── Read frame ───────────────────────────────────────────────────
+        # Read FIRST — key check comes after imshow so the window is
+        # guaranteed to be visible when waitKey is called.
         ret, frame = cap.read()
         if not ret:
             print("[INFO] End of video / no frame received.")
             break
+
+        if paused:
+            cv2.imshow("Motion Tracker", frame)
+            key = cv2.waitKey(30) & 0xFF
+            if key == ord('q'):
+                break
+            elif key == ord('p'):
+                paused = False
+                print("[INFO] Resumed")
+            continue
 
         # Optionally resize large frames for speed (uncomment if needed)
         # frame = cv2.resize(frame, (960, 540))
@@ -346,11 +352,27 @@ def run(args: argparse.Namespace) -> None:
             show_motion_mask(clean_mask)
 
         # ── Display main window ───────────────────────────────────────────
+        # imshow MUST come before waitKey — on macOS, waitKey requires an
+        # active window to process events correctly.
         cv2.imshow("Motion Tracker", frame)
 
         # ── Save output ───────────────────────────────────────────────────
         if video_writer:
             video_writer.write(frame)
+
+        # ── Keyboard input (AFTER imshow so the window is visible) ────────
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'):
+            break
+        elif key == ord('p'):
+            paused = not paused
+            print("[INFO] Paused" if paused else "[INFO] Resumed")
+        elif key == ord('m'):
+            show_mask = not show_mask
+            if not show_mask:
+                cv2.destroyWindow("Motion Mask")
+        elif key == ord('t'):
+            show_trail = not show_trail
 
     # ── Cleanup ───────────────────────────────────────────────────────────────
     cap.release()
