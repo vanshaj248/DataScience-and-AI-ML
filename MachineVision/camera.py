@@ -2,22 +2,6 @@
 camera.py — Mac-First Camera Handler
 =====================================
 Solves every macOS/AVFoundation camera quirk in one place:
-
-  Problem 1 — Wrong backend
-    OpenCV on macOS may default to a legacy backend that opens the device
-    but delivers all-zero frames. We force CAP_AVFOUNDATION.
-
-  Problem 2 — BGRA frames
-    AVFoundation delivers 4-channel BGRA, not 3-channel BGR.
-    We detect this and convert automatically.
-
-  Problem 3 — Warm-up drain
-    Previous code read warm-up frames from cap, draining the live buffer,
-    then the main loop found nothing left. We now reopen after probing.
-
-  Problem 4 — Startup blank frames
-    The first N frames after open() are often blank (black) while the
-    sensor initialises exposure. We skip them transparently.
 """
 
 import time
