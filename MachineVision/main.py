@@ -1,372 +1,164 @@
 """
-main.py — Motion Detection & Tracking System
-============================================
-Classical computer-vision pipeline (no deep learning).
+main.py — Motion Detection & Tracking  (Mac Edition)
+=====================================================
+Wires camera → detector → tracker → display in a tight loop.
 
-Pipeline overview
------------------
-  Video frame
-      │
-      ▼
-  Grayscale conversion          ← reduce to 1-channel intensity image
-      │
-      ▼
-  Gaussian blur                 ← suppress high-frequency noise
-      │
-      ▼
-  Background subtraction        ← per-pixel difference vs rolling average
-      │
-      ▼
-  Absolute difference + thresh  ← isolate significant motion pixels
-      │
-      ▼
-  Morphological ops (open/dilate) ← remove noise, fill holes
-      │
-      ▼
-  Contour detection             ← find connected moving regions
-      │
-      ▼
-  Area filtering                ← discard tiny spurious blobs
-      │
-      ▼
-  Bounding boxes → Tracker      ← assign / maintain unique object IDs
-      │
-      ▼
-  Draw overlays + display
+Built specifically for macOS AVFoundation cameras (built-in FaceTime,
+Continuity Camera, virtual cameras).  Works on video files too.
 
 Usage
 -----
-  # Webcam (default)
-  python main.py
+  python main.py                        # built-in webcam
+  python main.py --source 1             # second camera
+  python main.py --source clip.mp4      # video file
+  python main.py --show-mask            # open motion-mask debug window
+  python main.py --sensitivity 15       # more sensitive (default 25)
+  python main.py --save output.mp4      # save annotated video
 
-  # Video file
-  python main.py --source path/to/video.mp4
-
-  # Save output, show mask window, tune sensitivity
-  python main.py --source video.mp4 --save output.mp4 --show-mask --sensitivity 20
-
-  Controls
-  --------
-  q  — quit
-  p  — pause / resume
-  m  — toggle motion-mask window
-  t  — toggle trajectory trails
+Runtime controls
+----------------
+  q — quit            p — pause / resume
+  m — mask on/off     t — trails on/off
 """
 
 import argparse
 import sys
 
 import cv2
-import numpy as np
 
-from tracker import CentroidTracker
-from utils import (
+from camera   import MacCamera
+from detector import MotionDetector
+from tracker  import CentroidTracker
+from display  import (
     FPSCounter, VideoWriter,
-    draw_bounding_box, draw_centroid, draw_trail,
-    draw_fps, draw_object_count, show_motion_mask
+    draw_box, draw_centroid, draw_trail,
+    draw_hud, draw_calibrating, show_mask_window,
 )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Command-line arguments
-# ─────────────────────────────────────────────────────────────────────────────
+# ── Number of frames to let the background model settle before tracking ───
+CALIBRATION_FRAMES = 45
+
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Classical Motion Detection & Tracking System"
-    )
-    parser.add_argument(
-        "--source", default=0,
-        help="Video source: 0 (webcam), integer device index, or path to video file."
-    )
-    parser.add_argument(
-        "--save", default="",
-        help="If set, save annotated output to this file path (e.g. output.mp4)."
-    )
-    parser.add_argument(
-        "--show-mask", action="store_true",
-        help="Open a second window showing the binary motion mask."
-    )
-    parser.add_argument(
-        "--sensitivity", type=int, default=25,
-        help="Motion threshold (0-255). Lower = more sensitive. Default: 25."
-    )
-    parser.add_argument(
-        "--min-area", type=int, default=500,
-        help="Minimum contour area (px²) to be considered an object. Default: 500."
-    )
-    parser.add_argument(
-        "--max-disappeared", type=int, default=40,
-        help="Frames before a lost object is deregistered. Default: 40."
-    )
-    parser.add_argument(
-        "--no-trails", action="store_true",
-        help="Disable trajectory trails."
-    )
-    return parser.parse_args()
+    p = argparse.ArgumentParser(description="Motion Detection & Tracking — Mac")
+    p.add_argument("--source",          default=0,
+                   help="Camera index (default 0) or path to video file")
+    p.add_argument("--save",            default="",
+                   help="Save annotated output to this .mp4 path")
+    p.add_argument("--show-mask",       action="store_true",
+                   help="Open a side-by-side motion-mask debug window")
+    p.add_argument("--sensitivity",     type=int, default=25,
+                   help="Motion threshold 0-255 (lower = more sensitive, default 25)")
+    p.add_argument("--min-area",        type=int, default=800,
+                   help="Minimum blob area in px² (default 800)")
+    p.add_argument("--max-disappeared", type=int, default=50,
+                   help="Frames before a lost object is removed (default 50)")
+    p.add_argument("--no-trails",       action="store_true",
+                   help="Disable trajectory trails")
+    p.add_argument("--bg-alpha",        type=float, default=0.05,
+                   help="Background learning rate 0-1 (default 0.05)")
+    return p.parse_args()
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Background model helpers
-# ─────────────────────────────────────────────────────────────────────────────
-
-def build_background_subtractor():
-    """
-    Use OpenCV's MOG2 background subtractor.
-    It maintains a Gaussian Mixture Model per pixel, adapting to slow
-    lighting changes automatically — more robust than a simple running mean.
-
-    detectShadows=False speeds things up and avoids grey shadow regions
-    being misclassified as foreground.
-    """
-    return cv2.createBackgroundSubtractorMOG2(
-        history=500,
-        varThreshold=16,
-        detectShadows=False
-    )
-
-
-def preprocess_frame(frame: np.ndarray,
-                     blur_ksize: int = 21) -> np.ndarray:
-    """
-    Convert to grayscale and apply Gaussian blur.
-
-    Parameters
-    ----------
-    blur_ksize : int — kernel size (must be odd). Larger = more blur = less noise
-                       but also less sensitivity to small/slow motion.
-    """
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-    # Gaussian blur: smooths out sensor noise so tiny single-pixel
-    # fluctuations don't trigger false positives.
-    blurred = cv2.GaussianBlur(gray, (blur_ksize, blur_ksize), 0)
-    return blurred
-
-
-def compute_motion_mask(fg_mask: np.ndarray,
-                        threshold: int = 25) -> np.ndarray:
-    """
-    Post-process the raw foreground mask from MOG2.
-
-    Steps
-    -----
-    1. Binary threshold  — convert grey-level probabilities to hard 0/255.
-    2. Morphological open (erosion then dilation)
-         — removes small isolated noise pixels.
-    3. Morphological dilate
-         — expands blobs slightly so nearby fragments merge into one contour.
-    """
-    # 1. Hard threshold: pixels brighter than `threshold` become white (255)
-    _, binary = cv2.threshold(fg_mask, threshold, 255, cv2.THRESH_BINARY)
-
-    # 2. Opening: erode first (shrinks), then dilate (expands)
-    #    Net effect: tiny isolated blobs disappear, large blobs mostly survive.
-    kernel_open = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-    opened = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel_open, iterations=2)
-
-    # 3. Dilation: expand surviving blobs to fill small internal holes
-    #    and connect nearby fragments of the same object.
-    kernel_dilate = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
-    dilated = cv2.dilate(opened, kernel_dilate, iterations=3)
-
-    return dilated
-
-
-def find_detections(mask: np.ndarray,
-                    min_area: int = 500) -> list:
-    """
-    Find bounding-box rectangles of significant moving objects.
-
-    Parameters
-    ----------
-    mask     : binary motion mask (uint8, 0 or 255)
-    min_area : contours smaller than this many pixels are ignored
-
-    Returns
-    -------
-    List of (x, y, w, h) tuples, one per detected object.
-    """
-    # cv2.RETR_EXTERNAL: only outermost contours (no nested children)
-    # cv2.CHAIN_APPROX_SIMPLE: compress horizontal/vertical/diagonal
-    #   runs to just their endpoints, saving memory.
-    contours, _ = cv2.findContours(
-        mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-    )
-
-    detections = []
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-
-        # Skip tiny blobs — they are usually noise or micro-vibrations
-        if area < min_area:
-            continue
-
-        x, y, w, h = cv2.boundingRect(cnt)
-        detections.append((x, y, w, h))
-
-    return detections
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Main loop
-# ─────────────────────────────────────────────────────────────────────────────
 
 def run(args: argparse.Namespace) -> None:
 
-    # ── Open video source ────────────────────────────────────────────────────
-    source = args.source
-    # Allow passing an integer string from the command line ("0", "1" …)
-    if isinstance(source, str) and source.isdigit():
-        source = int(source)
-
-    cap = cv2.VideoCapture(source)
-    if not cap.isOpened():
-        print(f"[ERROR] Cannot open video source: {source}")
-        sys.exit(1)
-
-    print(f"[INFO] Opened source: {source}")
-    print("[INFO] Controls:  q=quit  p=pause  m=toggle mask  t=toggle trails")
-
-    # ── Initialise components ────────────────────────────────────────────────
-    bg_subtractor = build_background_subtractor()
-
-    tracker = CentroidTracker(
-        max_disappeared=args.max_disappeared,
-        max_distance=80,
-        max_trail_len=40
+    # ── Initialise all components ─────────────────────────────────────────
+    cam      = MacCamera(source=args.source)
+    detector = MotionDetector(
+        bg_alpha  = args.bg_alpha,
+        threshold = args.sensitivity,
+        min_area  = args.min_area,
     )
+    tracker  = CentroidTracker(max_disappeared=args.max_disappeared)
+    fps_ctr  = FPSCounter()
+    writer   = VideoWriter(args.save) if args.save else None
 
-    fps_counter  = FPSCounter(avg_over=30)
-    video_writer = VideoWriter(args.save) if args.save else None
-
-    # Runtime toggles (can be flipped with keyboard shortcuts)
     show_mask  = args.show_mask
     show_trail = not args.no_trails
     paused     = False
+    frame_num  = 0
 
-    # Warm-up: skip first few frames so MOG2 can initialise its model
-    WARMUP_FRAMES = 30
-    warmup_count  = 0
+    # ── Open camera (probe → reopen → ready) ─────────────────────────────
+    cam.open()
 
-    # ── Create the display window BEFORE the loop ─────────────────────────
-    # On macOS, cv2.waitKey only works reliably once a named window exists.
-    # Creating it here ensures key input works from the very first frame.
+    # Create the display window before the loop so waitKey works on macOS
     cv2.namedWindow("Motion Tracker", cv2.WINDOW_NORMAL)
 
-    # macOS camera warm-up: read and discard a few frames so the camera
-    # sensor has time to initialise exposure/white-balance before MOG2 learns.
-    print("[INFO] Warming up camera...")
-    for _ in range(5):
-        cap.read()
+    print("[main] Running — press q to quit")
 
+    # ── Main loop ─────────────────────────────────────────────────────────
     while True:
-        # ── Read frame ───────────────────────────────────────────────────
-        # Read FIRST — key check comes after imshow so the window is
-        # guaranteed to be visible when waitKey is called.
-        ret, frame = cap.read()
-        if not ret:
-            print("[INFO] End of video / no frame received.")
+
+        frame = cam.read()
+        if frame is None:
+            print("[main] Stream ended.")
             break
 
+        frame_num += 1
+
+        # ── Pause handling ────────────────────────────────────────────────
         if paused:
             cv2.imshow("Motion Tracker", frame)
             key = cv2.waitKey(30) & 0xFF
-            if key == ord('q'):
-                break
+            if   key == ord('q'): break
             elif key == ord('p'):
                 paused = False
-                print("[INFO] Resumed")
+                print("[main] Resumed")
             continue
 
-        # Optionally resize large frames for speed (uncomment if needed)
-        # frame = cv2.resize(frame, (960, 540))
+        # ── Detect motion ─────────────────────────────────────────────────
+        detections = detector.update(frame)
 
-        # ── Pre-process ───────────────────────────────────────────────────
-        blurred = preprocess_frame(frame, blur_ksize=21)
+        # Show calibration banner for the first N frames while the
+        # background model is still learning the static scene
+        calibrating = (frame_num <= CALIBRATION_FRAMES)
 
-        # ── Background subtraction ────────────────────────────────────────
-        # MOG2 returns a grey-scale "foreground probability" mask.
-        # We pass the blurred (noise-reduced) frame for better quality.
-        fg_mask = bg_subtractor.apply(blurred)
+        # ── Track objects ─────────────────────────────────────────────────
+        objects = {} if calibrating else tracker.update(detections)
 
-        # ── Motion mask clean-up ──────────────────────────────────────────
-        clean_mask = compute_motion_mask(fg_mask, threshold=args.sensitivity)
-
-        # During warm-up MOG2 is still learning the background — skip tracking
-        warmup_count += 1
-        if warmup_count < WARMUP_FRAMES:
-            cv2.putText(frame, "Calibrating background...", (10, 50),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 165, 255), 2)
-            cv2.imshow("Motion Tracker", frame)
-            continue
-
-        # ── Find detections ───────────────────────────────────────────────
-        detections = find_detections(clean_mask, min_area=args.min_area)
-
-        # ── Update tracker ────────────────────────────────────────────────
-        objects = tracker.update(detections)
-
-        # Build a quick lookup: centroid → rect (for drawing)
-        # We match each tracked centroid to the closest detection bounding box.
-        centroid_to_rect: dict = {}
+        # ── Map tracked ID → bounding rect ───────────────────────────────
+        # For each detection find the closest tracked centroid
+        id_to_rect: dict = {}
         for rect in detections:
             rx, ry, rw, rh = rect
-            rc_x = rx + rw // 2
-            rc_y = ry + rh // 2
-            # Find the tracked object whose centroid is nearest this detection
-            best_id, best_dist = None, float("inf")
-            for obj_id, (cx, cy) in objects.items():
-                d = ((cx - rc_x) ** 2 + (cy - rc_y) ** 2) ** 0.5
-                if d < best_dist:
-                    best_dist, best_id = d, obj_id
+            rc = (rx + rw // 2, ry + rh // 2)
+            best_id, best_d = None, float("inf")
+            for oid, (cx, cy) in objects.items():
+                d = ((cx - rc[0]) ** 2 + (cy - rc[1]) ** 2) ** 0.5
+                if d < best_d:
+                    best_d, best_id = d, oid
             if best_id is not None:
-                centroid_to_rect[best_id] = rect
+                id_to_rect[best_id] = rect
 
-        # ── Draw overlays ─────────────────────────────────────────────────
-        for obj_id, centroid in objects.items():
+        # ── Draw ──────────────────────────────────────────────────────────
+        for oid, centroid in objects.items():
+            if oid in id_to_rect:
+                draw_box(frame, id_to_rect[oid], oid)
+            draw_centroid(frame, centroid, oid)
+            if show_trail:
+                draw_trail(frame, tracker.trails.get(oid, []), oid)
 
-            # Bounding box (if we have a detection for this object this frame)
-            if obj_id in centroid_to_rect:
-                draw_bounding_box(frame, centroid_to_rect[obj_id], obj_id)
+        if calibrating:
+            draw_calibrating(frame)
 
-            # Centroid dot
-            draw_centroid(frame, centroid, obj_id)
+        draw_hud(frame, fps_ctr.tick(), len(objects))
 
-            # Motion trail
-            if show_trail and obj_id in tracker.trails:
-                draw_trail(frame, tracker.trails[obj_id], obj_id)
+        # ── Mask debug window ─────────────────────────────────────────────
+        if show_mask and detector.debug_diff is not None:
+            show_mask_window(detector.debug_diff, detector.debug_mask)
 
-        # ── HUD ───────────────────────────────────────────────────────────
-        fps = fps_counter.tick()
-        draw_fps(frame, fps)
-        draw_object_count(frame, len(objects))
-
-        # Key-binding reminder (bottom-left)
-        hint = "q:quit  p:pause  m:mask  t:trails"
-        cv2.putText(frame, hint, (10, frame.shape[0] - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (180, 180, 180), 1, cv2.LINE_AA)
-
-        # ── Optional mask window ──────────────────────────────────────────
-        if show_mask:
-            show_motion_mask(clean_mask)
-
-        # ── Display main window ───────────────────────────────────────────
-        # imshow MUST come before waitKey — on macOS, waitKey requires an
-        # active window to process events correctly.
+        # ── Display (imshow before waitKey — required on macOS) ───────────
         cv2.imshow("Motion Tracker", frame)
+        if writer:
+            writer.write(frame)
 
-        # ── Save output ───────────────────────────────────────────────────
-        if video_writer:
-            video_writer.write(frame)
-
-        # ── Keyboard input (AFTER imshow so the window is visible) ────────
+        # ── Key handling ──────────────────────────────────────────────────
         key = cv2.waitKey(1) & 0xFF
-        if key == ord('q'):
-            break
+        if   key == ord('q'): break
         elif key == ord('p'):
             paused = not paused
-            print("[INFO] Paused" if paused else "[INFO] Resumed")
+            print("[main] Paused" if paused else "[main] Resumed")
         elif key == ord('m'):
             show_mask = not show_mask
             if not show_mask:
@@ -374,15 +166,13 @@ def run(args: argparse.Namespace) -> None:
         elif key == ord('t'):
             show_trail = not show_trail
 
-    # ── Cleanup ───────────────────────────────────────────────────────────────
-    cap.release()
-    if video_writer:
-        video_writer.release()
+    # ── Cleanup ───────────────────────────────────────────────────────────
+    cam.release()
+    if writer:
+        writer.release()
     cv2.destroyAllWindows()
-    print("[INFO] Done.")
+    print("[main] Done.")
 
-
-# ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     run(parse_args())
