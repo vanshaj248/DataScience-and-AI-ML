@@ -45,7 +45,6 @@ class CentroidTracker:
         self.disappeared:OrderedDict = OrderedDict()   # id → frame count
         self.trails:     OrderedDict = OrderedDict()   # id → [(cx,cy), ...]
 
-    # ── Public API ─────────────────────────────────────────────────────────
 
     def update(self, rects: list[tuple]) -> OrderedDict:
         """
@@ -59,7 +58,6 @@ class CentroidTracker:
         -------
         OrderedDict  id → (cx, cy)  for all currently tracked objects.
         """
-        # No detections — age all existing objects
         if not rects:
             for oid in list(self.disappeared):
                 self.disappeared[oid] += 1
@@ -67,20 +65,16 @@ class CentroidTracker:
                     self._deregister(oid)
             return self.objects
 
-        # Centroids of incoming detections
         new_centroids = [(x + w // 2, y + h // 2) for x, y, w, h in rects]
 
-        # No existing objects — register everything
         if not self.objects:
             for c in new_centroids:
                 self._register(c)
             return self.objects
 
-        # ── Greedy nearest-neighbour matching ──────────────────────────────
         obj_ids  = list(self.objects.keys())
         obj_cs   = list(self.objects.values())
 
-        # All (distance, existing_row, new_col) triples, sorted by distance
         pairs = sorted(
             (self._dist(obj_cs[r], new_centroids[c]), r, c)
             for r in range(len(obj_ids))
@@ -103,20 +97,17 @@ class CentroidTracker:
             used_rows.add(row)
             used_cols.add(col)
 
-        # Unmatched existing objects — age them
         for row in set(range(len(obj_ids))) - used_rows:
             oid = obj_ids[row]
             self.disappeared[oid] += 1
             if self.disappeared[oid] > self.max_disappeared:
                 self._deregister(oid)
 
-        # Unmatched new centroids — register as new objects
         for col in set(range(len(new_centroids))) - used_cols:
             self._register(new_centroids[col])
 
         return self.objects
 
-    # ── Internal helpers ───────────────────────────────────────────────────
 
     def _register(self, centroid: tuple) -> None:
         self.objects[self._next_id]     = centroid

@@ -25,10 +25,8 @@ import cv2
 import numpy as np
 
 
-# How many consecutive blank frames to tolerate at startup before giving up
 _MAX_BLANK_STARTUP = 120
 
-# How many consecutive bad reads (ret=False) to tolerate in the main loop
 MAX_BAD_READS = 30
 
 
@@ -97,7 +95,6 @@ class MacCamera:
         self._cap       = None
         self._bad_reads = 0
 
-    # ── Public API ─────────────────────────────────────────────────────────
 
     def open(self) -> None:
         """
@@ -119,21 +116,16 @@ class MacCamera:
             print("[camera] ERROR: Could not open camera.")
             sys.exit(1)
 
-        # Optional: hint the driver about desired resolution & FPS
-        # (driver may ignore these — we don't enforce them)
         self._cap.set(cv2.CAP_PROP_FRAME_WIDTH,  1280)
         self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT,  720)
         self._cap.set(cv2.CAP_PROP_FPS, self.target_fps)
         
-        # Boost exposure and gain for better visibility in low light
         self._cap.set(cv2.CAP_PROP_BRIGHTNESS, 100)
         self._cap.set(cv2.CAP_PROP_EXPOSURE, 0)      # 0 = auto exposure
         self._cap.set(cv2.CAP_PROP_GAIN, 80)
 
-        # Short sleep so AVFoundation can fully initialise the new session
         time.sleep(1.5)
 
-        # Drain stale frames and check brightness
         brightness_samples = []
         for _ in range(60):
             ret, f = self._cap.read()
@@ -179,7 +171,6 @@ class MacCamera:
             self._cap.release()
             self._cap = None
 
-    # ── Context-manager support ────────────────────────────────────────────
 
     def __enter__(self):
         self.open()

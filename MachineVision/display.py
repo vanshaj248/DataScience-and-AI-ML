@@ -9,7 +9,6 @@ import cv2
 import numpy as np
 
 
-# ── Colour palette (BGR) — 20 distinct colours cycling by object ID ────────
 
 _PALETTE_RGB = [
     (255, 80,  80),  (80,  255, 80),  (80,  180, 255), (255, 180, 80),
@@ -24,7 +23,6 @@ def _colour(oid: int) -> tuple:
     return (b, g, r)   # BGR for OpenCV
 
 
-# ── FPS counter ─────────────────────────────────────────────────────────────
 
 class FPSCounter:
     def __init__(self, window: int = 30):
@@ -41,17 +39,14 @@ class FPSCounter:
         return (len(self._ts) - 1) / elapsed if elapsed > 0 else 0.0
 
 
-# ── Drawing functions ────────────────────────────────────────────────────────
 
 def draw_box(frame: np.ndarray, rect: tuple, oid: int) -> None:
     """Draw a colour-coded bounding box with an ID label."""
     x, y, w, h = rect
     col = _colour(oid)
 
-    # Box
     cv2.rectangle(frame, (x, y), (x + w, y + h), col, 2)
 
-    # Label background
     label = f" ID {oid} "
     (tw, th), bl = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 1)
     lx1, ly1 = x, max(y - th - bl - 4, 0)
@@ -88,17 +83,14 @@ def draw_hud(frame: np.ndarray, fps: float, count: int) -> None:
     """Overlay FPS (top-right), object count (top-left), hint (bottom-left)."""
     h, w = frame.shape[:2]
 
-    # Object count
     cv2.putText(frame, f"Objects: {count}", (10, 28),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 255, 255), 2, cv2.LINE_AA)
 
-    # FPS
     fps_txt = f"FPS: {fps:.1f}"
     (tw, _), _ = cv2.getTextSize(fps_txt, cv2.FONT_HERSHEY_SIMPLEX, 0.65, 2)
     cv2.putText(frame, fps_txt, (w - tw - 10, 28),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 255, 0), 2, cv2.LINE_AA)
 
-    # Key hint
     cv2.putText(frame, "q:quit  p:pause  m:mask  t:trails",
                 (10, h - 10), cv2.FONT_HERSHEY_SIMPLEX,
                 0.4, (160, 160, 160), 1, cv2.LINE_AA)
@@ -111,7 +103,6 @@ def draw_calibrating(frame: np.ndarray) -> None:
                 0.65, (0, 165, 255), 2, cv2.LINE_AA)
 
 
-# ── Motion mask debug window ─────────────────────────────────────────────────
 
 def show_mask_window(diff: np.ndarray, mask: np.ndarray) -> None:
     """
@@ -120,7 +111,6 @@ def show_mask_window(diff: np.ndarray, mask: np.ndarray) -> None:
       Right — cleaned binary mask coloured with COLORMAP_HOT
     Shows content even when nothing is moving (left panel always has data).
     """
-    # Normalise diff to full 0-255 so it's always visible
     diff_norm  = cv2.normalize(diff, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
     diff_bgr   = cv2.cvtColor(diff_norm, cv2.COLOR_GRAY2BGR)
     mask_colour= cv2.applyColorMap(mask, cv2.COLORMAP_HOT)
@@ -138,7 +128,6 @@ def show_mask_window(diff: np.ndarray, mask: np.ndarray) -> None:
     cv2.imshow("Motion Mask", combined)
 
 
-# ── Video writer wrapper ─────────────────────────────────────────────────────
 
 class VideoWriter:
     """Lazy-init wrapper around cv2.VideoWriter."""

@@ -3,9 +3,6 @@ main.py — Motion Detection & Tracking  (Mac Edition)
 =====================================================
 Wires camera → detector → tracker → display in a tight loop.
 
-Built specifically for macOS AVFoundation cameras (built-in FaceTime,
-Continuity Camera, virtual cameras).  Works on video files too.
-
 Usage
 -----
   python main.py                        # built-in webcam
@@ -36,7 +33,6 @@ from display  import (
 )
 
 
-# ── Number of frames to let the background model settle before tracking ───
 CALIBRATION_FRAMES = 45
 
 
@@ -63,7 +59,6 @@ def parse_args() -> argparse.Namespace:
 
 def run(args: argparse.Namespace) -> None:
 
-    # ── Initialise all components ─────────────────────────────────────────
     cam      = MacCamera(source=args.source)
     detector = MotionDetector(
         bg_alpha  = args.bg_alpha,
@@ -79,15 +74,12 @@ def run(args: argparse.Namespace) -> None:
     paused     = False
     frame_num  = 0
 
-    # ── Open camera (probe → reopen → ready) ─────────────────────────────
     cam.open()
 
-    # Create the display window before the loop so waitKey works on macOS
     cv2.namedWindow("Motion Tracker", cv2.WINDOW_NORMAL)
 
     print("[main] Running — press q to quit")
 
-    # ── Main loop ─────────────────────────────────────────────────────────
     while True:
 
         frame = cam.read()
@@ -97,7 +89,6 @@ def run(args: argparse.Namespace) -> None:
 
         frame_num += 1
 
-        # ── Pause handling ────────────────────────────────────────────────
         if paused:
             cv2.imshow("Motion Tracker", frame)
             key = cv2.waitKey(30) & 0xFF
@@ -107,18 +98,12 @@ def run(args: argparse.Namespace) -> None:
                 print("[main] Resumed")
             continue
 
-        # ── Detect motion ─────────────────────────────────────────────────
         detections = detector.update(frame)
 
-        # Show calibration banner for the first N frames while the
-        # background model is still learning the static scene
         calibrating = (frame_num <= CALIBRATION_FRAMES)
 
-        # ── Track objects ─────────────────────────────────────────────────
         objects = {} if calibrating else tracker.update(detections)
 
-        # ── Map tracked ID → bounding rect ───────────────────────────────
-        # For each detection find the closest tracked centroid
         id_to_rect: dict = {}
         for rect in detections:
             rx, ry, rw, rh = rect
@@ -131,7 +116,6 @@ def run(args: argparse.Namespace) -> None:
             if best_id is not None:
                 id_to_rect[best_id] = rect
 
-        # ── Draw ──────────────────────────────────────────────────────────
         for oid, centroid in objects.items():
             if oid in id_to_rect:
                 draw_box(frame, id_to_rect[oid], oid)
@@ -144,16 +128,13 @@ def run(args: argparse.Namespace) -> None:
 
         draw_hud(frame, fps_ctr.tick(), len(objects))
 
-        # ── Mask debug window ─────────────────────────────────────────────
         if show_mask and detector.debug_diff is not None:
             show_mask_window(detector.debug_diff, detector.debug_mask)
 
-        # ── Display (imshow before waitKey — required on macOS) ───────────
         cv2.imshow("Motion Tracker", frame)
         if writer:
             writer.write(frame)
 
-        # ── Key handling ──────────────────────────────────────────────────
         key = cv2.waitKey(1) & 0xFF
         if   key == ord('q'): break
         elif key == ord('p'):
@@ -166,7 +147,6 @@ def run(args: argparse.Namespace) -> None:
         elif key == ord('t'):
             show_trail = not show_trail
 
-    # ── Cleanup ───────────────────────────────────────────────────────────
     cam.release()
     if writer:
         writer.release()

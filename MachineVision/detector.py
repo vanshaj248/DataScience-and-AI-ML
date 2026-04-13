@@ -57,7 +57,6 @@ class MotionDetector:
         self._last_diff: np.ndarray | None = None   # raw diff (for debug)
         self._last_mask: np.ndarray | None = None   # cleaned mask (for debug)
 
-    # ── Public API ─────────────────────────────────────────────────────────
 
     def update(self, frame: np.ndarray) -> list[tuple]:
         """
@@ -87,7 +86,6 @@ class MotionDetector:
         """Cleaned binary motion mask from the last update()."""
         return self._last_mask
 
-    # ── Internal helpers ───────────────────────────────────────────────────
 
     def _preprocess(self, frame: np.ndarray) -> np.ndarray:
         """
@@ -121,15 +119,12 @@ class MotionDetector:
         f32 = gray.astype(np.float32)
 
         if self._bg is None:
-            # First frame — initialise background, return zero diff
             self._bg = f32.copy()
             return np.zeros_like(gray)
 
-        # Absolute difference between current frame and background
         bg_uint8 = np.clip(self._bg, 0, 255).astype(np.uint8)
         diff     = cv2.absdiff(gray, bg_uint8)
 
-        # Update background (slow rolling average)
         cv2.accumulateWeighted(f32, self._bg, self.bg_alpha)
 
         return diff
@@ -144,14 +139,11 @@ class MotionDetector:
         2. Morph open  — erode then dilate removes isolated noise specks
         3. Morph dilate — expand blobs to fill holes and connect fragments
         """
-        # Step 1: binary threshold
         _, binary = cv2.threshold(diff, self.threshold, 255, cv2.THRESH_BINARY)
 
-        # Step 2: morphological open (remove noise)
         k_open  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
         opened  = cv2.morphologyEx(binary, cv2.MORPH_OPEN, k_open, iterations=2)
 
-        # Step 3: dilate (fill holes, merge nearby blobs)
         k_dil   = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
         dilated = cv2.dilate(opened, k_dil, iterations=3)
 
