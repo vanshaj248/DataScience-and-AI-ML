@@ -44,8 +44,8 @@ class MotionDetector:
 
     def __init__(self,
                  bg_alpha:   float = 0.05,
-                 threshold:  int   = 200,
-                 min_area:   int   = 10000,
+                 threshold:  int   = 400,
+                 min_area:   int   = 20000,
                  blur_ksize: int   = 21):
 
         self.bg_alpha   = bg_alpha

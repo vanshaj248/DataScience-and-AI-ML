@@ -1,7 +1,6 @@
 """
 main.py — Motion Detection & Tracking  (Mac Edition)
 =====================================================
-Wires camera → detector → tracker → display in a tight loop.
 
 Usage
 -----
